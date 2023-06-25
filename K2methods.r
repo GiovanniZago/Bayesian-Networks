@@ -42,6 +42,7 @@ parent_eval = function(i, parents = NA, df) { # i is the place of the variable i
     # cat('\ndataframe foo referred to variable i:', i, '\n')
     # print(foo)
 
+    # here the lfactorial at the denominator could give problems with small datasets
     out = prod(unlist(map2(.x = foo$prod, .y = foo$sum, .f = ~ (factorial(r - 1) / lfactorial(.y + r - 1)) * .x)))
     return(out)
 }
