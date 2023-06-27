@@ -1,4 +1,5 @@
 library(bnlearn)
+library(data.table)
 
 ######################################################################################
 # parent_eval
@@ -12,7 +13,7 @@ library(bnlearn)
 #
 #
 ######################################################################################
-parent_eval = function(i, parents = NA, df) { # i is the place of the variable in the assigned order, not the order of the variable in the database
+parent_eval = function(i, parents = NA, df) { # i is the place of the variable in the assigned order, i.e. the column order in the database
     R = unique(df[, i])
     r = length(R)
 
@@ -20,15 +21,17 @@ parent_eval = function(i, parents = NA, df) { # i is the place of the variable i
         q = 1
         N = as.data.frame(rbind(table(df[, i])))
     } else {
-        W = as.data.frame(cbind(unique(df[, parents])))
+        W = unique(df[, parents, drop = FALSE])
         q = nrow(W)
         N = data.frame(matrix(nrow = q, ncol = r))
 
         for (j in 1:q) {
-            df_parents = df[apply(as.data.frame(cbind(df[,parents])), 1, function(row) all(row == as.numeric(W[j,]))),]
-            for (k in 1:r) {
-                N[j, k] = sum(df_parents[, i] == R[k])
-            }
+            # mask = pmap_lgl(DF[, c(1,2), drop = FALSE], function(...) all(c(...) == comp_vec))
+            # DF[mask,,drop = FALSE]
+            df_parents = df[apply(df[, parents, drop = FALSE], 1, function(row) all(row == as.numeric(W[j, ]))), ]
+            N[j, ] = as.data.frame(rbind(table(df_parents[, i]))) # this automatically sorts the counts per variables per intstantiation 
+                                                                    # by increasing variable value (i.e. 1 count for variable 0, 1 count
+                                                                    # for variable 1 etc etc)
         }
     }
 
@@ -36,14 +39,67 @@ parent_eval = function(i, parents = NA, df) { # i is the place of the variable i
     # print(N)
 
     # here the lfactorial could give problems with small datasets
-    foo = data.frame(prod = apply(as.data.frame(map(N, lfactorial)), 1, prod), 
-                    sum = apply(N, 1, sum))
+    foo = data.frame(prod = pmap_dbl(map_df(N, lfactorial), prod), 
+                    sum = pmap_dbl(N, sum))
 
     # cat('\ndataframe foo referred to variable i:', i, '\n')
     # print(foo)
 
     # here the lfactorial at the denominator could give problems with small datasets
-    out = prod(unlist(map2(.x = foo$prod, .y = foo$sum, .f = ~ (factorial(r - 1) / lfactorial(.y + r - 1)) * .x)))
+    out = prod(map2_dbl(.x = foo$prod, .y = foo$sum, .f = ~ (factorial(r - 1) / lfactorial(.y + r - 1)) * .x))
+    return(out)
+}
+
+######################################################################################
+# parent_eval_modified
+######################################################################################
+# calcualtes function (12) in the article
+#
+#
+#
+#
+#
+#
+#
+######################################################################################
+parent_eval_modified = function(i, parents = NA, df) { # i is the place of the variable in the assigned order, i.e. the column order in the database
+    df = as.data.table(df)
+    R = unique(df[, i, with = FALSE])
+    r = length(R)
+
+    if (all(is.na(parents))) {
+        q = 1
+        N =data.table(rbind(table(df[, i])))
+    } else {
+        W = unique(df[, parents, with = FALSE])
+        q = nrow(W)
+        N = data.table(matrix(nrow = q, ncol = r))
+
+        for (j in 1:q) {
+            # mask = pmap_lgl(DF[, c(1,2), drop = FALSE], function(...) all(c(...) == comp_vec))
+            # DF[mask,,drop = FALSE]
+            instantiation = as.numeric(W[j, ])
+            mask = df[, .I[.SD == instantiation], .SDcols = parents]
+            mask = mask[!is.na(mask)]
+            df_parents = df[mask]
+            N[j, ] = data.table(rbind(table(df_parents[, i]))) # this automatically sorts the counts per variables per intstantiation 
+                                                                    # by increasing variable value (i.e. 1 count for variable 0, 1 count
+                                                                    # for variable 1 etc etc)
+        }
+    }
+
+    # cat('matrix N referred to variable i:', i, '\n')
+    # print(N)
+
+    # here the lfactorial could give problems with small datasets
+    foo = data.frame(prod = pmap_dbl(map_df(N, lfactorial), prod), 
+                    sum = pmap_dbl(N, sum))
+
+    # cat('\ndataframe foo referred to variable i:', i, '\n')
+    # print(foo)
+
+    # here the lfactorial at the denominator could give problems with small datasets
+    out = prod(map2_dbl(.x = foo$prod, .y = foo$sum, .f = ~ (factorial(r - 1) / lfactorial(.y + r - 1)) * .x))
     return(out)
 }
 
@@ -69,7 +125,7 @@ K2_algorithm = function(n, u, D) {
         # cat('\nPold:', P_old, 'i:', i, '\n')
 
         OTP = TRUE
-        while(OTP & len_parents < u) {
+        while (OTP && len_parents < u) {
             # cat('parents:', parents[[i]], 'i:', i, '\n')
             # cat('condition:', is.na(parents[[i]]), 'variable:', i, '\n')
             if (all(is.na(parents[[i]]))) {
