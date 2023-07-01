@@ -28,21 +28,13 @@ $P(B_S|D)$. In general, more than a single structure can be reasonable, but we w
 3. There are no cases that have variables with missing values.
 4. Let $B_P$ denote an assignment of numerical probability values to a belief network that has structure $B_{S_1}$, the term $f(B_P|B_{S_1})$ denotes the **likelihood** of the of the particular numerical probability and it is uniform. The term $P(B_S)$ can be viewed as a prior probability - namely the *preference bias probability*. 
 
-The whole idea of the **K2** algorithm is to heuristically look for the most probable belief–network structure given a database of cases. This is done, by computing
-$$
-    P(B_S, D) = P(B_S) \displaystyle\prod_{i=1}^n f(i, \pi_i)
-$$
-where $f(B_P|B_S)$ can be expressed (**Theorem 1**) as 
-$$
-    f(i, \pi_i) = \displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}! 
-$$
-and we refer to it as the `parent-eval` function (computed as logarithm in order to work with sums rather than products). This is a heuristic method that uses a greedy-search method that begins by making the assumption that a node has no parents, and then adds incrementally that parent whose addition most increases the probability of the resulting structure. When the addition of no single parent can increase the probability, we stop adding parents to the node. 
+The whole idea of the **K2** algorithm is to heuristically look for the most probable belief–network structure given a database of cases. This is done, by computing $$ P(B_S, D) = P(B_S) \displaystyle\prod_{i=1}^n f(i, \pi_i) $$ where $f(B_P|B_S)$ can be expressed (**Theorem 1**) as $$ f(i, \pi_i) = \displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}! $$ and we refer to it as the `parent-eval` function (computed as logarithm in order to work with sums rather than products). This is a heuristic method that uses a greedy-search method that begins by making the assumption that a node has no parents, and then adds incrementally that parent whose addition most increases the probability of the resulting structure. When the addition of no single parent can increase the probability, we stop adding parents to the node. 
 <!-- The idea is to apply the above equations iteratively for every possible $B_S$. -->
 * $\pi_i$ is the set of parents of node $x_i$
 * $q_i=|\phi_i|$, where $\phi_i$ is the list of possible instantiations of the parents of $x_i$ in database $D$
 * $r_i=|V_i|$ where $V_i$ is the list of all possible values of the attribute $x_i$
 * $\alpha_{ijk}$ is number of cases in $D$ in which the attribute $x_i$ is instantiated with its $k^{th}$ value, and the parents of $x_i$ in $\pi_i$ are instantiated with the $j^{th}$ instantiation in $\phi_i$
-* $N_{ij}=\displaystyle\sum_{k=1}^{r_i}\alpha{ijk}$, so the number of instances in the database in which the parents of $x_i$ in $\pi_i$ are instantiated with the $j^{th}$ instantiation in $\phi_i$.
+* $N_{ij}=\displaystyle\sum_{k=1}^{r_i}\alpha_{ijk}$, so the number of instances in the database in which the parents of $x_i$ in $\pi_i$ are instantiated with the $j^{th}$ instantiation in $\phi_i$.
 
 ```r
 log.parent_eval = function(i, parents = NA, df) { 

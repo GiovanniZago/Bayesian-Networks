@@ -126,8 +126,8 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     if (time.info) {start = Sys.time()}
 
     # Useful variables for scoring
-    nodes = names(D)                     # node names
-    network.dag = empty.graph(nodes=nodes)   # network DAG (Directed Acyclic Graph)
+    nodes = names(D)                            # node names
+    network.dag = empty.graph(nodes=nodes)      # network DAG (Directed Acyclic Graph)
 
     parents = c(rep(NA, n), vector("list"))
     for (i in 1:n) {
@@ -189,13 +189,13 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     }
 
     # Network score
-    network.score = score(network.dag, D) 
+    network.score = score(network.dag, D)
     cat("The Network score is", network.score, "\n  ")
 
     return(list(parents=parents, score=network.score))
 }
 
-K2 <- function(n, u, D, seed = 12345, num.iterations = 1){
+K2 = function(n, u, D, seed = 12345, num.iterations = 1){
     start = Sys.time()
     set.seed(seed)
 
@@ -203,16 +203,20 @@ K2 <- function(n, u, D, seed = 12345, num.iterations = 1){
     best.score = -Inf
 
     for(i in 1:num.iterations){
-        
-        cat('Running iteration #', i, '...')
 
         nodes.order = if (i == 1) names(D) else sample(names(D))
-        result = K2_algorithm(n, u, D)
+        cat('order =', nodes.order)
+        for(u.single in 1:(u)){
 
-        if (result$score > best.score) {
-            best.score = result$score
-            best.order = nodes.order
-            best.dag = result$parents
+            cat('Running iteration #', i, 'u =', u.single)
+            result = K2_algorithm(n, u.single, D[, nodes.order])
+
+            if (result$score > best.score) {
+                best.score = result$score
+                best.order = nodes.order
+                best.dag = result$parents
+                best.u = u.single
+            }
         }
     }
     cat(' DONE \n')
@@ -220,15 +224,15 @@ K2 <- function(n, u, D, seed = 12345, num.iterations = 1){
     end <- Sys.time()
     cat('\nTotal execution time:', difftime(end, start, units='mins'), 'mins\n')
 
-    return(list(dag=best.dag, score=best.score, order=best.order))
+    return(list(dag=best.dag, score=best.score, order=best.order, u=best.u))
 }
 
-###########################
-### get_dag             ###
-### returns an object   ### 
-### handable by the     ###
-### bnlearn class       ###
-###########################
+#############################
+###     get_dag           ###
+###     returns an object ### 
+###     handable by the   ###
+###     bnlearn class     ###
+#############################
 
 get_dag = function(vars, parents) {
     string = ''
