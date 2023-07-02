@@ -2,47 +2,13 @@ library(bnlearn)
 library(data.table)
 library(dplyr)
 
-#######################
-### parent_eval     ###
-### formula (12)    ###
-### in the article  ###
-#######################
-
-parent_eval = function(i, parents = NA, df) { # i is the place of the variable in the assigned order, i.e. the column order in the database
-    R = unique(df[, i])
-    r = length(R)
-
-    if (all(is.na(parents))) {
-        q = 1
-        N = as.data.frame(rbind(table(df[, i])))
-    } else {
-        W = unique(df[, parents, drop = FALSE])
-        q = nrow(W)
-        N = data.frame(matrix(nrow = q, ncol = r))
-
-        for (j in 1:q) {
-            # mask = pmap_lgl(DF[, c(1,2), drop = FALSE], function(...) all(c(...) == comp_vec))
-            # DF[mask,,drop = FALSE]
-            df_parents = df[apply(df[, parents, drop = FALSE], 1, function(row) all(row == as.numeric(W[j, ]))), ]
-            N[j, ] = as.data.frame(rbind(table(df_parents[, i]))) # this automatically sorts the counts per variables per intstantiation 
-                                                                    # by increasing variable value (i.e. 1 count for variable 0, 1 count
-                                                                    # for variable 1 etc etc)
-        }
+create_count_array = function(df) {
+    df_names = names(df)
+    array = array(0, dim = ncol(df))
+    for (i in 1:length(df_names)) {
+        array[i] = nrow(unique(df[df_names[i]]))
     }
-
-    # cat('matrix N referred to variable i:', i, '\n')
-    # print(N)
-
-    # here the lfactorial could give problems with small datasets
-    foo = data.frame(prod = pmap_dbl(map_df(N, lfactorial), prod), 
-                    sum = pmap_dbl(N, sum))
-
-    # cat('\ndataframe foo referred to variable i:', i, '\n')
-    # print(foo)
-
-    # here the lfactorial at the denominator could give problems with small datasets
-    out = prod(map2_dbl(.x = foo$prod, .y = foo$sum, .f = ~ (factorial(r - 1) / lfactorial(.y + r - 1)) * .x))
-    return(out)
+    return(array)
 }
 
 #######################
@@ -50,56 +16,27 @@ parent_eval = function(i, parents = NA, df) { # i is the place of the variable i
 ### formula (12)    ###
 ### in the article  ###
 #######################
-                                  
-log.parent_eval = function(i, parents = NA, df) { 
+
+log.parent_eval = function(i, parents = NA, df, carray) {
     # i is the place of the variable in the assigned order, i.e. the column order in the database
     R = unique(df[, i])
     r = length(R) # number of rows
-    # cat("Parents are:\n")
-    # print(parents)
+    df_names = names(df)
     if (all(is.na(parents))) {
         q = 1
         N = as.data.frame(rbind(table(df[, i])))
+        mat = N
     } else {
-        W = unique(df[, parents, drop = FALSE])
-        q = nrow(W)
-        N = data.frame(matrix(nrow = q, ncol = r))
-        # cat("W matrix is:\n")
-        # print(W)
-        for (j in 1:q) {
-            # mask = pmap_lgl(DF[, c(1,2), drop = FALSE], function(...) all(c(...) == comp_vec))
-            # DF[mask,,drop = FALSE]
-            # cat("Exploring W elemnts:\n")
-            # print(W[j, , drop = TRUE])
-            # cat("df[, parents]:\n")
-            # print(df[, parents, drop = FALSE])
-            # cat("long function:\n")
-            # print(apply(df[, parents, drop = FALSE], 1, function(row) all(row == as.numeric(j-1))))
-            df_parents = df[apply(df[, parents, drop = FALSE], 1, function(row) all(row == W[j, ])), ]
-            # cat("df_parents is:\n")
-            # print(df_parents)
-            N[j, ] = as.data.frame(rbind(table(df_parents[, i])))   # this automatically sorts the counts per variables per instantiation 
-                                                                    # by increasing variable value (i.e. 1 count for variable 0, 1 count
-                                                                    # for variable 1 etc etc)
-        }
+        N1 = df %>% group_by(df[parents]) %>% mutate(index=cur_group_id()) %>% group_by(index) %>% count(df[df_names[i]])
+        mat = matrix(0, nrow = max(N1$index), ncol = carray[i])
+        mat[cbind( data.matrix(N1[c("index", df_names[i])]))] = N1$n
+
     }
 
-    # cat('matrix N referred to variable i:', i, '\n')
-    # print(N)
-
-    # here the lfactorial could give problems with small datasets:
-    # to avoid it we compute the log(f) function:                            
-    log.foo = data.frame(logprod = pmap_dbl(map_df(N, lfactorial), sum), 
-                    sum = pmap_dbl(N, sum))
-
-    # cat('\ndataframe foo referred to variable i:', i, '\n')
-    # print(log.foo)
-
-    # here the lfactorial at the denominator could give problems with small datasets
-#     out = prod(map2_dbl(.x = foo$prod, .y = foo$sum, .f = ~ (factorial(r - 1) / lfactorial(.y + r - 1)) * .x))
-    log.out = sum(map2_dbl(.x = log.foo$logprod, .y = log.foo$sum, .f = ~ (lfactorial(r - 1) - lfactorial(.y + r - 1)) + sum(.x)) )
-    # cat(log.out)
-    return(log.out)
+    logprod = rowSums(lfactorial(mat))
+    ssum = rowSums(mat)
+    logout2 = sum(lfactorial(r - 1) - lfactorial(ssum + r - 1) + logprod)
+    return(logout2)
 }
 
 ####################
@@ -125,6 +62,8 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
 
     if (time.info) {start = Sys.time()}
 
+    carray = create_count_array(D)
+
     # Useful variables for scoring
     nodes = names(D)                            # node names
     network.dag = empty.graph(nodes=nodes)      # network DAG (Directed Acyclic Graph)
@@ -134,7 +73,7 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
         if (i == 1) {next}
 
         len_parents = 0
-        P_old = log.parent_eval(i, parents[[i]], D)
+        P_old = log.parent_eval(i, parents[[i]], D, carray)
         # cat('\nPold:', P_old, 'i:', i, '\n')
 
         OTP = TRUE # Ok To Proceed
@@ -158,7 +97,7 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
                 cand_parents = append(parents[[i]], indexes[t])
                 cand_parents = cand_parents[!is.na(cand_parents)]
                 # cat('cand_parents:', cand_parents, 't:', t, 'i:', i, '\n')
-                P[t] = log.parent_eval(i, cand_parents, D)
+                P[t] = log.parent_eval(i, cand_parents, D, carray)
                 # cat('P[t]:', P[t], 't:', t, 'i:', i, '\n')
             }
             # cat('P vector:', P, 'i:', i, '\n')
@@ -205,10 +144,10 @@ K2 = function(n, u, D, seed = 12345, num.iterations = 1){
     for(i in 1:num.iterations){
 
         nodes.order = if (i == 1) names(D) else sample(names(D))
-        cat('order =', nodes.order)
+        cat('order =', nodes.order, "\n")
         for(u.single in 1:(u)){
 
-            cat('Running iteration #', i, 'u =', u.single)
+            cat('Running iteration #', i, 'u =', u.single, "\n")
             result = K2_algorithm(n, u.single, D[, nodes.order])
 
             if (result$score > best.score) {
