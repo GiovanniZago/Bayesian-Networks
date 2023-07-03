@@ -28,7 +28,7 @@ P(B_S|D) = \frac{P(B_S, D)}{P(D)}
 \end{equation}
 $$
 
-The challenging part is the computation of the denominator $P(D)$, since it would be necessary to evaluate all the possible network structures $\{B_{S_j}\}_{j \in \mathbf{N}}$. However, in practice, we are interested in ranking different structures by computing the ratio of their posterior probabilities:
+The challenging part is the computation of the denominator $P(D)$, since it would be necessary to evaluate all the possible network structures $\lbrace B_{S_j}\rbrace _{j \in \mathbf{N}}$. However, in practice, we are interested in ranking different structures by computing the ratio of their posterior probabilities:
 
 $$
 \begin{equation}
@@ -38,10 +38,10 @@ $$
 
 Thus, the problem of maximizing $P(B_S|D)$ can be shifted to the problem of maximizing $P(B_S,D)$. The derivation of $P(B_S,D)$ relies on the following assumptions:
 
-1. The data set variables are discrete.
+1. The dataset variables are discrete.
 2. Cases occur independently.
 3. There are no cases that have variables with missing values.
-4. Let $B_P$ denote an assignment of numerical probability values to a belief network that has structure $B_{S_1}$, the term $f(B_P|B_{S_1})$ denotes the **likelihood** of the particular numerical probability and it is uniform. The term $P(B_S)$ can be viewed as a prior probability - namely the *preference bias probability*.
+4. Let $B_P$ denote an assignment of numerical probability values to a belief network that has structure $B_S$, the term $f(B_P|B_S)$ denotes the **likelihood** of the particular numerical probability and it is uniform. The term $P(B_S)$ can be viewed as a prior probability - namely the *preference bias probability*.
 
 Application of Assumption 1 allows us to write 
 
@@ -55,13 +55,13 @@ $$
 \begin{equation} P(B_S, D) = \int_{B_P}\biggl [\displaystyle\prod_{h=1}^m P(C_h|B_S, B_P) \biggl ]f(B_P|B_{S})P(B_S) dB_P \end{equation}
 $$
 
-where $m$ is the number of cases in $D$ and $C_h$ is the $h^{th}$ case in $D$. Eventually it is possible to demonstrate that Assumptions 3 and 4 allow us to obtain
+where $m$ is the number of cases in $D$ and $C_h$ is the $h^{th}$ case in $D$. Eventually it is possible to demonstrate that Assumptions 3 and 4 lead to obtaining
 
 $$
 \begin{equation} P(B_S,D) = P(B_S)\displaystyle\prod_{i=1}^n \displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}!  \end{equation}
 $$
 
-The maximization of Equation (5) involves the enumeration of all possible $B_S$, which is the problem we wanted to avoid, since it scales exponentially. However, if we assume also that **there exists an ordering** of the variables stored in $D$ and that $P(B_S)$ **is uniform**, the maximization problem relies only on finding the best configuration of the parents compatible with the given ordering:
+The maximization of Equation (5) involves the enumeration of all possible $B_S$, which is the problem we wanted to avoid from the beginning, since it scales exponentially. However, if we assume also that **there exists an ordering** of the variables stored in $D$ and that $P(B_S)$ **is uniform**, the maximization problem relies only on finding the best configuration of the parents compatible with the given ordering:
 
 $$
 \begin{equation} \max[P(B_S,D)] = c \displaystyle\prod_{i=1}^n \max \Bigg[\displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}! \Bigg] \end{equation}
