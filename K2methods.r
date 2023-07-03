@@ -55,9 +55,9 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     
     # ============================================================= #
     
-    # Output: 
-    # For each node, a printout of the parents of the node
-    # network score
+    # Output: a list with:
+    # A printout of the parents of the node, for each node
+    # The network score evaluated with bnlearn
     
     # ============================================================= #
 
@@ -129,7 +129,7 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     }
 
     # Network score
-    network.score = score(network.dag, D, type='bde')
+    network.score = score(network.dag, D)
     cat("The Network score is", network.score, "\n  ")
 
     return(list(parents=parents, score=network.score))
@@ -142,26 +142,18 @@ K2 = function(n, u, D, seed = 12345, num.iterations = 1){
     # scoring function
     best.score = -Inf
 
-    nodes.order.permutations = matrix(data = NA, 
-        byrow = TRUE, ncol = length(names(D)), nrow = num.iterations)
-    nodes.order.permutations[1, ] = names(D)
-    if (num.iterations > 1){
-        for(j in 2:num.iterations){
-            nodes.order.permutations[j, ] = sample(names(D), replace = FALSE)
-        }
-    }
-
     for(i in 1:num.iterations){
 
-        cat('order =', nodes.order.permutations[i, ], "\n")
+        nodes.order = if (i == 1) names(D) else sample(names(D))
+        cat('order =', nodes.order, "\n")
         for(u.single in 1:(u)){
 
             cat('Running iteration #', i, 'u =', u.single, "\n")
-            result = K2_algorithm(n, u.single, D[, nodes.order.permutations[i, ]])
+            result = K2_algorithm(n, u.single, D[, nodes.order])
 
             if (result$score > best.score) {
                 best.score = result$score
-                best.order = nodes.order.permutations[i, ]
+                best.order = nodes.order
                 best.dag = result$parents
                 best.u = u.single
             }

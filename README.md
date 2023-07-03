@@ -36,7 +36,7 @@ $$
 \end{equation}
 $$
 
-Thus the problem of maximizing $P(B_S|D)$ can be shifted to the problem of maximizing $P(B_S,D)$. The derivation of $P(B_S,D)$ relies on the following assumptions:
+Thus, the problem of maximizing $P(B_S|D)$ can be shifted to the problem of maximizing $P(B_S,D)$. The derivation of $P(B_S,D)$ relies on the following assumptions:
 
 1. The data set variables are discrete.
 2. Cases occur independently.
@@ -109,7 +109,7 @@ log.parent_eval = function(i, parents = NA, df, carray) {
 
 This function can be computed in $\mathcal{O}(m\hspace{0.1cm}u\hspace{0.1cm}r)$ time where $u$ is the maximum number of parents that any node is permitted to have, as designated by the user and $m$ is the number of cases in the data set $D$.
 
-For *run-time* savings results, the logarithmic version of equation (2) has been implemented, since it requires only additions and subtractions, rather than multiplications and divisions.
+For *run-time* savings results, the logarithmic version of equation (7) has been implemented, since it requires only additions and subtractions, rather than multiplications and divisions.
 
 The whole $\texttt{K2}$ plays around the `parent_eval` function, defined in **R** as:
 
@@ -126,9 +126,9 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     
     # ============================================================= #
     
-    # Output: 
-    # For each node, a printout of the parents of the node
-    # network score
+    # Output: a list with:
+    # A printout of the parents of the node, for each node
+    # The network score evaluated with bnlearn
     
     # ============================================================= #
 
@@ -256,10 +256,23 @@ $$
 
 In order to select the best possible architecture, we have implemented an interation function that loops through $n\gg 1$ possible combinations and select the one with the **best score**.
 
-The execution time is of $\sim 0.9\hspace{0.1cm}s$ and the score is $-2.25\cdot 10^4$. The best architecture found is the one shown in the picture below:
+The execution time is of $\sim 0.9\hspace{0.1cm}s$ and the score is $-2.23\cdot 10^4$. The best architecture found is the one shown in the picture below:
 
 <div align="center">
     <img src=images/Asia.png width=500 height=500>
+</div>
+
+The `bnlearn` library allows also to compute conditional probabilities based both on $D$ and the DAG found. For example, looking this survey, we could interested in understand the relationship between *smoking* and *bronchitis*. With `bn.fit` we can calculate the posterior probabilities of all the involved variables and easily get:
+
+<div align="center">
+    <img src=images/bronc_smoke.png width=400 height=400>
+    <img src=images/xray_either.png width=400 height=400>
+</div>
+
+Moreover, we have perfomed an analysis based on **C**onditional **P**robability **Q**uery: 
+
+<div align="center">
+    <img src=images/cpq.png width=350 height=350>
 </div>
 
 ### Data set: `Child`
@@ -285,8 +298,8 @@ We have then tested the best DAG found by the **K2** algorithm for each set and 
 | Data set | $\tau_{iter}^\texttt{K2}$ | $score_{\texttt{K2}}$ | $score_{\texttt{bnstruct}}$ |
 | :-------: | :------------------: | :---------------------: | :---------------------------: |
 | `Ruiz` |    $\sim 10^{-6}\hspace{0.1cm}s$    |         $-20.2$         |               $-20.2$               |
-| `Asia` |    $\sim 0.9\hspace{0.1cm}s$    |   $-2.24\cdot 10^4$   |               $-2.23\cdot 10^4$               |
-| `Child` |    $\sim 6\hspace{0.1cm}s$    |    $-6.0\cdot10^4$    |               $-6.4\cdot10^4$               |
+| `Asia` |    $\sim 0.9\hspace{0.1cm}s$    |   $-2.23\cdot 10^4$   |               $-2.23\cdot 10^4$            |
+| `Child` |    $\sim 6\hspace{0.1cm}s$    |    $-5.99\cdot10^4$   |               $-6.10\cdot10^4$               |
 
 </center>
 
