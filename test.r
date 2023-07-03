@@ -4,27 +4,7 @@ suppressWarnings(suppressMessages(library(Rgraphviz)))
 suppressWarnings(suppressMessages(library(bnlearn)))
 suppressWarnings(suppressMessages(library(bnstruct)))
 suppressWarnings(suppressMessages(library(dplyr)))
-# set.seed(9112001)
 
-# data <- NULL
-# data$case <- as.factor(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)+1)
-# data$x1 <- as.factor(c(1, 1, 0, 1, 0, 0, 1, 0, 1, 0)+1)# classification target
-# data$x2 <- as.factor(c(0, 1, 0, 1, 0, 1, 1, 0, 1, 0)+1)
-# data$x3 <- as.factor(c(0, 1, 1, 1, 0, 1, 1, 0, 1, 0)+1)
-# data <- as.data.frame(data, stringsAsFactors = TRUE)
-
-# data = asia()
-# data = impute(data)
-# data = imputed.data(data)
-#
-# mode(data) = 'character'
-# DF = data.frame(data, stringsAsFactors = TRUE)
-# cat('The dataset dimensions are:', dim(DF))
-#
-# colnames(DF) <- asia()@variables
-# head(DF)
-# today = 01072023 # default seed = 1234
-# struct = K2(n = ncol(DF), u = 3, D = DF, seed=today, num.iterations=1)
 
 create_count_array = function(df) {
     df_names = names(df)
@@ -46,7 +26,21 @@ log.parent_eval = function(i, parents = NA, df, carray) {
         N = as.data.frame(rbind(table(df[, i])))
         mat = N
     } else {
+        # Praticamente, raggruppiamo per i parents, quindi tutti quelli che hanno le stesse combinazioni di parents
+        # saranno raggruppati insieme, dopo aggiungiamo unaa nuova colonna (mutate) che è semplicemente un indice
+        # del gruppetto fatto con il groupby (l'uso di questo indice è spiegato dopo), dopo raggruppo per
+        # questo indice ed conto le occorrenze di x_i per ciascun indice (sottogruppo), esempio:
+        # i = 2, parents = [1]  (cioè xi = "tubercolosys", x_parents=["Asia"])
+        # A tibble: 4 x 3
+        # Groups:   index [2]
+        #   index Tubercolosys     n
+        #   <int>        <dbl> <int>
+        # 1     1            1  4918
+        # 2     1            2    35
+        # 3     2            1  4520
+        # 4     2            2   527
         N1 = df %>% group_by(df[parents]) %>% mutate(index=cur_group_id()) %>% group_by(index) %>% count(df[df_names[i]])
+
         mat = matrix(0, nrow = max(N1$index), ncol = carray[i])
         mat[cbind( data.matrix(N1[c("index", df_names[i])]))] = N1$n
 
@@ -207,17 +201,19 @@ get_gigi_dag = function(vars, parents) {
     return(model2network(string))
 }
 
-# main = function(){
-#     data = asia()
-#     data = impute(data)
-#     data = imputed.data(data)
-#
-#     # mode(data) = 'character'
-#     DF = data.frame(data, stringsAsFactors = TRUE)
-#     cat('The dataset dimensions are:', dim(DF))
-#
-#     colnames(DF) <- asia()@variables
-#     head(DF)
-#
-#     K2_algorithm(n = ncol(DF), u = 3, D = DF)
-# }
+main = function(){
+    data = asia()
+    data = impute(data)
+    data = imputed.data(data)
+
+    # mode(data) = 'character'
+    DF = data.frame(data, stringsAsFactors = TRUE)
+    cat('The dataset dimensions are:', dim(DF))
+
+    colnames(DF) <- asia()@variables
+    head(DF)
+
+    K2_algorithm(n = ncol(DF), u = 3, D = DF)
+}
+
+# main()
