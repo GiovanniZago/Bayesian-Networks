@@ -254,7 +254,7 @@ We have then tested the best DAG found by the **K2** algorithm for each set and 
 | Data set | $\tau_{iter}^\texttt{K2}$ | $score_{\texttt{K2}}$ | $score_{\texttt{bnstruct}}$ |
 | :-------: | :------------------: | :---------------------: | :---------------------------: |
 | `Ruiz` |    $\sim 10^{-6}\hspace{0.1cm}s$    |         $-20.2$         |               $-20.2$               |
-| `Asia` |    $\sim 0.9\hspace{0.1cm}s$    |   $-2.2\cdot 10^4$   |               $-2.4\cdot 10^4$               |
+| `Asia` |    $\sim 0.9\hspace{0.1cm}s$    |   $-2.24\cdot 10^4$   |               $-2.23\cdot 10^4$               |
 | `Child` |    $\sim 6\hspace{0.1cm}s$    |    $-6.0\cdot10^4$    |               $-6.4\cdot10^4$               |
 
 </center>
