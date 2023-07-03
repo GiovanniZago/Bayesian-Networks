@@ -20,29 +20,60 @@ To create and manipulating BN DAGs, **R** provide the **bnlearn** package (**B**
 
 # $\texttt{K2}$ algorithm
 
-Consider the problem of determining a belief-network structure $B_S$ that maximizes
-$P(B_S|D)$. In general, more than a single structure can be reasonable, but we will assume here that the structure that maximizes the probability is only one. For a given data set $D$, $P(B_S, D) \propto P(B_S|D)$, so that finding the $B_S$ that maximizes $P(B_S|D)$ is equivalent to find the $B_S$ that maximizes $P(B_S, D)$.
+When dealing with Bayesian networks, a natural problem that arises is the determination of the most probable structure given a database $D$. Indicating by $B_S$ a network structure, we know that the probability $P(B_S|D)$ of having a particular structure given the dataset obeys
 
-**Assumptions:**
+$$
+\begin{equation}
+P(B_S|D) = \frac{P(B_S, D)}{P(D)}
+\end{equation}
+$$
+
+The challenging part is the computation of the denominator $P(D)$, since it would be necessary to evaluate all the possible network structures $\{B_{S_j}\}_{j \in \mathbf{N}}$. However, in practice, we are interested in ranking different structures by computing the ratio of their posterior probabilities:
+
+$$
+\begin{equation}
+\frac{P(B_{S_i}|D)}{P(B_{S_j}|D)} = \frac{P(B_{S_i}, D)}{P(B_{S_j}, D)}
+\end{equation}
+$$
+
+Thus the problem of maximizing $P(B_S|D)$ can be shifted to the problem of maximizing $P(B_S,D)$. The derivation of $P(B_S,D)$ relies on the following assumptions:
 
 1. The data set variables are discrete.
 2. Cases occur independently.
 3. There are no cases that have variables with missing values.
 4. Let $B_P$ denote an assignment of numerical probability values to a belief network that has structure $B_{S_1}$, the term $f(B_P|B_{S_1})$ denotes the **likelihood** of the particular numerical probability and it is uniform. The term $P(B_S)$ can be viewed as a prior probability - namely the *preference bias probability*.
 
-The whole idea of the **K2** algorithm is to heuristically look for the most probable belief–network structure given a database of cases. This is done, by computing 
+Application of Assumption 1 allows us to write 
+
+$$
+\begin{equation} P(B_S, D) = \int_{B_P} P(D|B_P, B_S) f(B_P|B_{S})P(B_S) dB_P \end{equation}
+$$
+
+with $P(D|B_P, B_S)$ being the probability mass function of our data given the network structure and its conditional probabilities assignments. Assumption 2 gives
 
 $$
 \begin{equation} P(B_S, D) = \int_{B_P}\biggl [\displaystyle\prod_{h=1}^m P(C_h|B_S, B_P) \biggl ]f(B_P|B_{S})P(B_S) dB_P \end{equation}
 $$
 
-where $m$ is the number of cases in $D$, $C_h$ is the $h^{th}$ case in $D$ and $f(B_P|B_S)$ can be expressed (**Theorem 1**) as 
+where $m$ is the number of cases in $D$ and $C_h$ is the $h^{th}$ case in $D$. Eventually it is possible to demonstrate that Assumptions 3 and 4 allow us to obtain
+
+$$
+\begin{equation} P(B_S,D) = P(B_S)\displaystyle\prod_{i=1}^n \displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}!  \end{equation}
+$$
+
+The maximization of Equation (5) involves the enumeration of all possible $B_S$, which is the problem we wanted to avoid, since it scales exponentially. However, if we assume also that **there exists an ordering** of the variables stored in $D$ and that $P(B_S)$ **is uniform**, the maximization problem relies only on finding the best configuration of the parents compatible with the given ordering:
+
+$$
+\begin{equation} \max[P(B_S,D)] = c \displaystyle\prod_{i=1}^n \max \Bigg[\displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}! \Bigg] \end{equation}
+$$
+
+Indeed, the whole idea of the **K2** algorithm is to heuristically perform this maximization. It is convenient to define the following function
 
 $$
 \begin{equation} f(i, \pi_i) = \displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}!  \end{equation}
 $$
 
-and we refer to it as the `parent_eval` function. This is a heuristic algorithm that uses a greedy-search method that begins by making the assumption that a node has no parents, and then adds incrementally that parent whose addition most increases the probability of the resulting structure. When the addition of no single parent can increase the probability, we stop adding parents to the node.
+which we will refer to as the `parent_eval` function. K2 algorithm uses a greedy-search method that begins by making the assumption that a node has no parents, and then adds incrementally that parent whose addition most increases the probability of the resulting structure. When the addition of no single parent can increase the probability, we stop adding parents to the node.
 
 <!-- The idea is to apply the above equations iteratively for every possible $B_S$. -->
 
