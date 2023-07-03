@@ -268,11 +268,11 @@ The `bnlearn` library allows also to compute conditional probabilities based bot
     <img src=images/xray_either.png width=400 height=400>
 </div>
 
-Moreover, we have perfomed an analysis based on **C**onditional **P**robability **Q**uery: 
+<!-- Moreover, we have perfomed an analysis based on **C**onditional **P**robability **Q**uery: 
 
 <div align="center">
     <img src=images/cpq.png width=350 height=350>
-</div>
+</div> -->
 
 ### Data set: `Child`
 
@@ -286,7 +286,14 @@ The execution time is of $\sim 6\hspace{0.1cm}s$ and the score is $-5.99\cdot10^
     <img src=images/Child.png width=600 height=600>
 </div>
 
-## `bnstruct` data set comparison
+With `bn.fit` we can calculate the posterior probabilities of all the involved variables and easily get:
+
+<div align="center">
+    <img src=images/lungparench_disease.png width=400 height=400>
+    <img src=images/lungs_chestxray.png width=400 height=400>
+</div>
+
+## `bnstruct`: data set comparison
 
 Furthermore, we have analyzed the three data sets with the **R** library $\texttt{bnstruct}$ **[4]** and compared its performances in terms of time efficiency and the final **DAG** score obtained. We see how $\texttt{bnstruct}$ is very computationally efficient, allowing to solve for the best Bayesian Network in few seconds.
 
