@@ -4,3 +4,5 @@
 miscellaneous.ipynb
 .pdf
 .py
+/.ipynb_checkpoints
+/.idea
