@@ -70,7 +70,7 @@ $$
 Indeed, the whole idea of the **K2** algorithm is to heuristically perform this maximization. It is convenient to define the following function
 
 $$
-\begin{equation} f(i, \pi_i) = \displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}!  \end{equation}
+\begin{equation} f(i, \pi_i) = \displaystyle\prod_{j=1}^{q_i} \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}!  \end{equation}
 $$
 
 which we will refer to as the `parent_eval` function. K2 algorithm uses a greedy-search method that begins by making the assumption that a node has no parents, and then adds incrementally that parent whose addition most increases the probability of the resulting structure. When the addition of no single parent can increase the probability, we stop adding parents to the node.
@@ -96,8 +96,7 @@ log.parent_eval = function(i, parents = NA, df, carray) {
     } else {
         N1 = df %>% group_by(df[parents]) %>% mutate(index=cur_group_id()) %>% group_by(index) %>% count(df[df_names[i]])
         mat = matrix(0, nrow = max(N1$index), ncol = carray[i])
-        mat[cbind( data.matrix(N1[c("index", df_names[i])]))] = N1$n
-
+        mat[cbind(data.matrix(N1[c("index", df_names[i])]))] = N1$n
     }
 
     logprod = rowSums(lfactorial(mat))
@@ -126,7 +125,7 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     
     # ============================================================= #
     
-    # Output: a list with:
+    # Output: a list with
     # A printout of the parents of the node, for each node
     # The network score evaluated with bnlearn
     
