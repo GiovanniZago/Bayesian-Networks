@@ -220,7 +220,7 @@ $$
 \bold{x_1\to x_2\to x_3}
 $$
 
- with a computation time of $\sim 0.006\:s$ and a final score of $-20$.
+ with a computation time of $\sim 0\:s$ and a final score of $-20.2$.
 
 ### Data set: `Asia`
 
@@ -228,7 +228,7 @@ $$
 
 In order to select the best possible architecture, we have implemented an interation function that loops through *n>1* possible combinations and select the one with the **best score**.
 
-The execution time is of $\sim 30\:mins$ and the score is $-2.2\cdot 10^4$. The best architecture found is the one shown in the picture below:
+The execution time is of $\sim 0.9\: s$ and the score is $-2.25\cdot 10^4$. The best architecture found is the one shown in the picture below:
 
 <div align="center">
     <img src=images/Asia.png width=400 height=400>
@@ -240,10 +240,10 @@ The `Child` dataset contains $5\cdot 10^3$ randomly generated items with missing
 
 In order to select the best possible architecture, we have implemented an interation function that loops through *n=1* possible combinations and select the one with the **best score**.
 
-The execution time is of $\sim 70\:mins$ and the score is $-6.0\cdot10^4$. The best architecture found is the one shown in the picture below:
+The execution time is of $\sim 6\:s$ and the score is $-5.99\cdot10^4$. The best architecture found is the one shown in the picture below:
 
 <div align="center">
-    <img src=images/Child.png width=450 height=450>
+    <img src=images/Child.png width=500 height=500>
 </div>
 
 ## `bnstruct` data set comparison
@@ -252,13 +252,18 @@ Furthermore, we have analyzed the three data sets with the **R** library $\textt
 
 We have then tested the best DAG found by the **K2** algorithm for each set and compared its **score** with the best BN structure found by $\texttt{bnstruct}$. We report the results in the table below:
 
+<center>
+
 | Data set | $\tau_{iter}^{K2}$ | $score_{\texttt{K2}}$ | $score_{\texttt{bnstruct}}$ |
 | :-------: | :------------------: | :---------------------: | :---------------------------: |
-| `Ruiz` |    $\sim 1\:s$    |         $-0.2\cdot 10^2$         |               ?               |
-| `Asia` |    $\sim 5\:m$    |   $-2.2\cdot 10^4$   |               ?               |
-| `Child` |    $\sim 1\:h$    |    $-6.0\cdot10^4$    |               ?               |
+| `Ruiz` |    $\sim 0\:s$    |         $-20.2$         |               $-20.2$               |
+| `Asia` |    $\sim 0.9\:s$    |   $-2.2\cdot 10^4$   |               $-2.4\cdot 10^4$               |
+| `Child` |    $\sim 6\:s$    |    $-6.0\cdot10^4$    |               $-6.4\cdot10^4$               |
 
-The score found $\texttt{bnstruct}$ is different from the one found by $\texttt{K2}$: this means that the **R** library is able to find a better DAG structure, both on small and larger dataset.
+</center>
+
+The score found $\texttt{bnstruct}$ is different from the one found by $\texttt{K2}$.
+The **R** library is able to find another DAG structure, both on small and larger data sets: this is due to the `mmhc` algorithm that performs a statistical sieving of the search space followed by a greedy evaluation. The Min-Max Hill Climb algorithm provides a considerably fast exectution time at the expense of a lower quality result **[5]**.  
 
 The very huge exectution time can be explained by considering that the $\texttt{K2}$ algortihm as an overall time complexity of $\mathcal{O}(m + r - 1) + \mathcal{O}(m u n r) \mathcal{O}(u) n = \mathcal{O}(m r u^2 n^2)$. In the worst case, when $u = n$, the time complexity is $\mathcal{O}(m r n^4)$.
 

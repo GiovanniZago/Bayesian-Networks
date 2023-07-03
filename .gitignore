@@ -2,3 +2,5 @@
 .ipynb_checkpoints/*
 .lintr
 miscellaneous.ipynb
+.pdf
+.py
