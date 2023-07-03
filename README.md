@@ -28,20 +28,21 @@ $P(B_S|D)$. In general, more than a single structure can be reasonable, but we w
 1. The data set variables are discrete.
 2. Cases occur independently.
 3. There are no cases that have variables with missing values.
-4. Let $B_P$ denote an assignment of numerical probability values to a belief network that has structure $B_{S_1}$, the term $f(B_P|B_{S_1})$ denotes the **likelihood** of the of the particular numerical probability and it is uniform. The term $P(B_S)$ can be viewed as a prior probability - namely the *preference bias probability*.
+4. Let $B_P$ denote an assignment of numerical probability values to a belief network that has structure $B_{S_1}$, the term $f(B_P|B_{S_1})$ denotes the **likelihood** of the particular numerical probability and it is uniform. The term $P(B_S)$ can be viewed as a prior probability - namely the *preference bias probability*.
 
 The whole idea of the **K2** algorithm is to heuristically look for the most probable belief–network structure given a database of cases. This is done, by computing 
 
 $$
-\begin{equation} P(B_S, D) = P(B_S) \displaystyle\prod_{i=1}^n f(i, \pi_i) \end{equation}
+\begin{equation} P(B_S, D) = \int_{B_P}\biggl [\displaystyle\prod_{h=1}^m P(C_h|B_S, B_P) \biggl ]f(B_P|B_{S})P(B_S) dB_P \end{equation}
 $$
-where $f(B_P|B_S)$ can be expressed (**Theorem 1**) as 
+
+where $m$ is the number of cases in $D$, $C_h$ is the $h^{th}$ case in $D$ and $f(B_P|B_S)$ can be expressed (**Theorem 1**) as 
 
 $$
 \begin{equation} f(i, \pi_i) = \displaystyle\prod_{j=1}^q \frac{(r_i-1)!}{(N_{ij}+r_i-1)!} \displaystyle\prod_{k=1}^{r_i} \alpha_{ijk}!  \end{equation}
 $$
 
- and we refer to it as the `parent_eval` function (computed as logarithm in order to work with sums rather than products). This is a heuristic method that uses a greedy-search method that begins by making the assumption that a node has no parents, and then adds incrementally that parent whose addition most increases the probability of the resulting structure. When the addition of no single parent can increase the probability, we stop adding parents to the node.
+and we refer to it as the `parent_eval` function. This is a heuristic algorithm that uses a greedy-search method that begins by making the assumption that a node has no parents, and then adds incrementally that parent whose addition most increases the probability of the resulting structure. When the addition of no single parent can increase the probability, we stop adding parents to the node.
 
 <!-- The idea is to apply the above equations iteratively for every possible $B_S$. -->
 
@@ -70,16 +71,16 @@ log.parent_eval = function(i, parents = NA, df, carray) {
 
     logprod = rowSums(lfactorial(mat))
     ssum = rowSums(mat)
-    logout2 = sum(lfactorial(r - 1) - lfactorial(ssum + r - 1) + logprod)
-    return(logout2)
+    logout = sum(lfactorial(r - 1) - lfactorial(ssum + r - 1) + logprod)
+    return(logout)
 }
 ```
 
-This function can be computed in $\mathcal{O}(m\:u\:r)$ time where $u$ is the maximum number of parents that any node is permitted to have, as designated by the user and $m$ is the number of cases in the data set $D$.
+This function can be computed in $\mathcal{O}(m\hspace{0.1cm}u\hspace{0.1cm}r)$ time where $u$ is the maximum number of parents that any node is permitted to have, as designated by the user and $m$ is the number of cases in the data set $D$.
 
 For *run-time* savings results, the logarithmic version of equation (2) has been implemented, since it requires only additions and subtractions, rather than multiplications and divisions.
 
-The whole $\texttt{K2}$ plays around the `parent_eval` function: we have defined it in **R** as:
+The whole $\texttt{K2}$ plays around the `parent_eval` function, defined in **R** as:
 
 ```r
 K2_algorithm = function(n, u, D, time.info = FALSE) {
@@ -96,6 +97,7 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     
     # Output: 
     # For each node, a printout of the parents of the node
+    # network score
     
     # ============================================================= #
 
@@ -113,7 +115,6 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
 
         len_parents = 0
         P_old = log.parent_eval(i, parents[[i]], D, carray)
-        # cat('\nPold:', P_old, 'i:', i, '\n')
 
         OTP = TRUE # Ok To Proceed
         while (OTP & len_parents < u) {
@@ -125,7 +126,6 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
                 foo = 1:(i-1)
                 indexes = foo[-parents[[i]]]
             }
-            # cat('indexes:', indexes, 'i:', i, '\n')
 
             if (length(indexes) == 0) {
                 OTP = FALSE
@@ -135,12 +135,8 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
             for (t in 1:length(indexes)) {
                 cand_parents = append(parents[[i]], indexes[t])
                 cand_parents = cand_parents[!is.na(cand_parents)]
-                # cat('cand_parents:', cand_parents, 't:', t, 'i:', i, '\n')
                 P[t] = log.parent_eval(i, cand_parents, D, carray)
-                # cat('P[t]:', P[t], 't:', t, 'i:', i, '\n')
             }
-            # cat('P vector:', P, 'i:', i, '\n')
-            # cat('maxP:', max(P), 'Pold:', P_old, 'i:', i, 'parents:', parents[[i]], '\n')
             if (max(P) > P_old) {
                 P_old = max(P)
                 parents[[i]] = append(parents[[i]], indexes[which.max(P)])
@@ -214,36 +210,37 @@ Furthermore, a `get_dag` function as been implemented: it creates a `string` tha
 
 ### Data set: `Ruiz`
 
-The `Ruiz` data set is a very sample and immediate data set, used just for testing: the results obtained are in perfect agreement with **[3]** and the final DAG is the one expected 
+The `Ruiz` data set is a very simple and immediate data set, used just for testing: the results obtained are in perfect agreement with **[3]** and the final DAG is the one expected 
 
-$$
+$$\begin{equation*}
 \bold{x_1\to x_2\to x_3}
+\end{equation*}
 $$
 
- with a computation time of $\sim 0\:s$ and a final score of $-20.2$.
+ with a computation time of $\sim 10^{-6}\hspace{0.1cm}s$ and a final score of $-20.2$.
 
 ### Data set: `Asia`
 
 `Asia` is a randomly generated data set of the Asia Bayesian Network, an **R** data set with $10^4$ items, no missing data, and no imputation needed, ideal for **BN** computions.
 
-In order to select the best possible architecture, we have implemented an interation function that loops through *n>1* possible combinations and select the one with the **best score**.
+In order to select the best possible architecture, we have implemented an interation function that loops through $n\gg 1$ possible combinations and select the one with the **best score**.
 
-The execution time is of $\sim 0.9\: s$ and the score is $-2.25\cdot 10^4$. The best architecture found is the one shown in the picture below:
+The execution time is of $\sim 0.9\hspace{0.1cm}s$ and the score is $-2.25\cdot 10^4$. The best architecture found is the one shown in the picture below:
 
 <div align="center">
-    <img src=images/Asia.png width=400 height=400>
+    <img src=images/Asia.png width=500 height=500>
 </div>
 
 ### Data set: `Child`
 
 The `Child` dataset contains $5\cdot 10^3$ randomly generated items with missing data (no latent variables) of the **Child Bayesian Network**. Imputation is performed, so both raw and imputed data are present.
 
-In order to select the best possible architecture, we have implemented an interation function that loops through *n=1* possible combinations and select the one with the **best score**.
+In order to select the best possible architecture, we have implemented an interation function that loops through $n\gg 1$ possible combinations and select the one with the **best score**.
 
-The execution time is of $\sim 6\:s$ and the score is $-5.99\cdot10^4$. The best architecture found is the one shown in the picture below:
+The execution time is of $\sim 6\hspace{0.1cm}s$ and the score is $-5.99\cdot10^4$. The best architecture found is the one shown in the picture below:
 
 <div align="center">
-    <img src=images/Child.png width=500 height=500>
+    <img src=images/Child.png width=600 height=600>
 </div>
 
 ## `bnstruct` data set comparison
@@ -254,18 +251,18 @@ We have then tested the best DAG found by the **K2** algorithm for each set and 
 
 <center>
 
-| Data set | $\tau_{iter}^{K2}$ | $score_{\texttt{K2}}$ | $score_{\texttt{bnstruct}}$ |
+| Data set | $\tau_{iter}^\texttt{K2}$ | $score_{\texttt{K2}}$ | $score_{\texttt{bnstruct}}$ |
 | :-------: | :------------------: | :---------------------: | :---------------------------: |
-| `Ruiz` |    $\sim 0\:s$    |         $-20.2$         |               $-20.2$               |
-| `Asia` |    $\sim 0.9\:s$    |   $-2.2\cdot 10^4$   |               $-2.4\cdot 10^4$               |
-| `Child` |    $\sim 6\:s$    |    $-6.0\cdot10^4$    |               $-6.4\cdot10^4$               |
+| `Ruiz` |    $\sim 10^{-6}\hspace{0.1cm}s$    |         $-20.2$         |               $-20.2$               |
+| `Asia` |    $\sim 0.9\hspace{0.1cm}s$    |   $-2.2\cdot 10^4$   |               $-2.4\cdot 10^4$               |
+| `Child` |    $\sim 6\hspace{0.1cm}s$    |    $-6.0\cdot10^4$    |               $-6.4\cdot10^4$               |
 
 </center>
 
-The score found $\texttt{bnstruct}$ is different from the one found by $\texttt{K2}$.
+The score found by $\texttt{bnstruct}$ is different from the one found by $\texttt{K2}$.
 The **R** library is able to find another DAG structure, both on small and larger data sets: this is due to the `mmhc` algorithm that performs a statistical sieving of the search space followed by a greedy evaluation. The Min-Max Hill Climb algorithm provides a considerably fast exectution time at the expense of a lower quality result **[5]**.  
 
-The very huge exectution time can be explained by considering that the $\texttt{K2}$ algortihm as an overall time complexity of $\mathcal{O}(m + r - 1) + \mathcal{O}(m u n r) \mathcal{O}(u) n = \mathcal{O}(m r u^2 n^2)$. In the worst case, when $u = n$, the time complexity is $\mathcal{O}(m r n^4)$.
+The increasing execution time can be explained by considering that the $\texttt{K2}$ algortihm as an overall time complexity of $\mathcal{O}(m + r - 1) + \mathcal{O}(m u n r) \mathcal{O}(u) n = \mathcal{O}(m r u^2 n^2)$. In the worst case, when $u = n$, the time complexity is $\mathcal{O}(m r n^4)$.
 
 Equation (1) represents more accurate and fundamental results **[2]** than the K2 algorithm does, but nonetheless K2 allows to get a preliminar grasp on the structure of the network under study.
 

@@ -35,8 +35,8 @@ log.parent_eval = function(i, parents = NA, df, carray) {
 
     logprod = rowSums(lfactorial(mat))
     ssum = rowSums(mat)
-    logout2 = sum(lfactorial(r - 1) - lfactorial(ssum + r - 1) + logprod)
-    return(logout2)
+    logout = sum(lfactorial(r - 1) - lfactorial(ssum + r - 1) + logprod)
+    return(logout)
 }
 
 ####################
@@ -57,6 +57,7 @@ K2_algorithm = function(n, u, D, time.info = FALSE) {
     
     # Output: 
     # For each node, a printout of the parents of the node
+    # network score
     
     # ============================================================= #
 
