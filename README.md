@@ -1,6 +1,6 @@
 <!-- # R - K2 algorithm -->
 
-<h1 align="center">Advanced Statistics - PoD<br>AY 2022/2023 <br> University of Padua</h1>
+<h1 align="center">Advanced Statistics - PoD<br> University of Padua <br> 2022/2023</h1>
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/62724611/166108149-7629a341-bbca-4a3e-8195-67f469a0cc08.png" height="150"/>
@@ -12,7 +12,7 @@
 
 # Bayesian Networks
 
-A **Bayesian Network**, known also as *belief network*, is a probabilistic graphical model that represents the relationships between given variables as a *directed acyclic graph* - **DAG**s **[1]**.
+A **Bayesian Network**, known also as *belief network*, is a probabilistic graphical model that represents the relationships between given variables as a *directed acyclic graph* - **DAG** **[1]**.
 
 Each **node** in the graph corresponds to one of the variables $A, B, C, D \dots$ in the survey and the *direct* and *indirect* relations are expressed via **arcs** between pairs of variables: $A\to E$ means that $E$, the *child* node, depends on $A$, the *parent* **[2]**.
 
@@ -86,13 +86,10 @@ which we will refer to as the `parent_eval` function. K2 algorithm uses a greedy
 ```r
 log.parent_eval = function(i, parents = NA, df, carray) {
     # i is the place of the variable in the assigned order, i.e. the column order in the database
-    R = unique(df[, i])
-    r = length(R) # number of rows
+    r = carray[i]
     df_names = names(df)
     if (all(is.na(parents))) {
-        q = 1
-        N = as.data.frame(rbind(table(df[, i])))
-        mat = N
+        mat = as.data.frame(rbind(table(df[, i])))
     } else {
         N1 = df %>% group_by(df[parents]) %>% mutate(index=cur_group_id()) %>% group_by(index) %>% count(df[df_names[i]])
         mat = matrix(0, nrow = max(N1$index), ncol = carray[i])
@@ -318,7 +315,7 @@ Equation (1) represents more accurate and fundamental results **[2]** than the K
 
 ## What's next?!
 
-A further development than can be performed could be to implment a sort of **backward K2** algorithm in which, basically, instead of adding parents, we start with a *fully-connected* graph and interatively remove links according to the *score* function. However, K2 and the backward K2 algorithms are not mutually exclusive, but they could be run together to formulate different many structures and
+A further development than can be performed could be to implment a sort of **backward K2** algorithm in which, basically, instead of adding parents, we start with a *fully-connected* graph and interatively remove links according to the *score* function. However, K2 and the backward K2 algorithms are not mutually exclusive, but they could be run together to formulate many different structures and achieve better results.
 
 ## **References**
 
